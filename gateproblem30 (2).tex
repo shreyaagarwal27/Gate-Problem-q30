@@ -1,0 +1,814 @@
+\documentclass[12pt,a4paper]{article}
+
+%=================================================
+% PACKAGES
+%=================================================
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm, headheight=15pt]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{colortbl}
+
+\tcbuselibrary{skins, breakable}
+
+%=================================================
+% REUSABLE CIRCUIT DIAGRAM COMMAND
+% Usage: \xnorcircuit{scale}
+%=================================================
+\newcommand{\xnorcircuit}[1]{%
+\begin{circuitikz}[scale=#1, transform shape]
+\ctikzset{logic ports=ieee}
+\def\xa{0}
+\def\xdotb{1.2}
+\def\xdota{2.2}
+\def\xnot{3.5}
+\def\xandtwo{5.0}
+\def\xandone{7.5}
+\def\xor{10.5}
+
+\node[not port] (not1) at (\xnot, 4) {};
+\node[not port] (not2) at (\xnot, 2) {};
+\node[and port] (and1) at (\xandone, 3) {};
+\node[and port] (and2) at (\xandtwo, 0) {};
+\node[or port, anchor=in 1] (or1) at (\xor, 3) {};
+
+\draw (\xa,4) node[ocirc]{} node[left=2pt]{$A$}
+      -- (\xdota,4) node[circ](dotA){}
+      -- (not1.in);
+\draw (\xa,2) node[ocirc]{} node[left=2pt]{$B$}
+      -- (\xdotb,2) node[circ](dotB){}
+      -- (not2.in);
+
+\draw (dotA) |- (and2.in 1);
+\draw (dotB) |- (and2.in 2);
+
+\draw (not1.out) -- ++(0.5,0) |- (and1.in 1);
+\draw (not2.out) -- ++(0.5,0) |- (and1.in 2);
+
+\draw (and1.out) -- (or1.in 1);
+\draw (and2.out) -- (\xor-1.0,0) |- (or1.in 2);
+
+\draw (or1.out) -- ++(0.8,0) node[ocirc]{} node[right=2pt]{$X$};
+\end{circuitikz}%
+}
+
+%=================================================
+% COLORS  (matching reference PDF palette)
+%=================================================
+\definecolor{accentblue}{RGB}{0, 86, 179}
+\definecolor{sectiongray}{RGB}{40, 40, 40}
+\definecolor{tableheadbg}{RGB}{0, 86, 179}
+\definecolor{rowaltbg}{RGB}{235, 241, 251}
+\definecolor{abstractbg}{RGB}{240, 245, 255}
+\definecolor{checkgreen}{RGB}{0, 140, 60}
+\definecolor{codebg}{RGB}{248, 248, 248}
+\definecolor{coderule}{RGB}{180, 180, 180}
+\definecolor{titledark}{RGB}{20, 20, 20}
+
+%=================================================
+% HYPERREF
+%=================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accentblue,
+    urlcolor=accentblue,
+    pdftitle={GATE IN 2017 -- XNOR Logic Circuit},
+    pdfauthor={Shreya Agarwal}
+}
+
+%=================================================
+% HEADER & FOOTER
+%=================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\small\textcolor{accentblue}{\textbf{GATE IN 2017} Logic Circuit Analysis}}
+\fancyhead[R]{\small\textcolor{accentblue}{Digital Electronics}}
+\fancyfoot[C]{\small\thepage}
+
+%=================================================
+% SECTION STYLE  (matches reference: ALL-CAPS, ruled)
+%=================================================
+\titleformat{\section}
+    {\large\bfseries\color{sectiongray}}
+    {\thesection.}{0.6em}{\MakeUppercase}
+    [\vspace{-4pt}\textcolor{accentblue}{\rule{\linewidth}{1.2pt}}]
+
+\titlespacing{\section}{0pt}{18pt}{8pt}
+
+\titleformat{\subsection}
+    {\normalsize\bfseries\color{accentblue}}
+    {\thesubsection}{0.6em}{}
+
+\titlespacing{\subsection}{0pt}{12pt}{4pt}
+
+%=================================================
+% CODE / LISTING STYLE
+%=================================================
+\lstdefinestyle{arduinostyle}{
+    language=C++,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{accentblue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{checkgreen},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+
+\lstdefinestyle{asmstyle}{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{accentblue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+
+%=================================================
+% CUSTOM TABLE STYLE HELPERS
+%=================================================
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+%=================================================
+% TCOLORBOX STYLES
+%=================================================
+\tcbset{
+    abstractbox/.style={
+        colback=abstractbg,
+        colframe=accentblue,
+        fonttitle=\bfseries\color{white},
+        coltitle=white,
+        attach boxed title to top left={yshift=-2mm, xshift=4mm},
+        boxed title style={colback=accentblue, colframe=accentblue},
+        boxrule=0.8pt,
+        arc=4pt,
+        left=8pt, right=8pt, top=8pt, bottom=8pt
+    },
+    resultbox/.style={
+        colback=white,
+        colframe=checkgreen,
+        fonttitle=\bfseries\color{white},
+        coltitle=white,
+        attach boxed title to top left={yshift=-2mm, xshift=4mm},
+        boxed title style={colback=checkgreen},
+        boxrule=1pt,
+        arc=4pt,
+        left=8pt, right=8pt, top=8pt, bottom=8pt
+    }
+}
+
+%=================================================
+% DOCUMENT
+%=================================================
+\begin{document}
+\thispagestyle{empty}
+
+%=================================================
+% COVER PAGE
+%=================================================
+\begin{titlepage}
+\begin{center}
+
+% --- TOP HEADER BAR ---
+\colorbox{accentblue}{\parbox{\linewidth}{%
+  \centering\vspace{6pt}
+  {\large\bfseries\color{white} DEPARTMENT OF ELECTRONICS \& COMMUNICATION ENGINEERING}\\[3pt]
+  {\normalsize\color{white} B.TECH.\ $\cdot$ Academic Year 2024-28}
+  \vspace{6pt}
+}}
+
+\vspace{0.6cm}
+
+% --- INSTITUTE NAME ---
+{\large\bfseries\color{sectiongray} National Institute of Technology Bhopal}
+
+\vspace{0.5cm}
+\textcolor{accentblue}{\rule{0.9\linewidth}{1.2pt}}
+\vspace{0.4cm}
+
+% --- STAR SYMBOL (matching reference) ---
+{\Large\textcolor{accentblue}{$\bigstar$}}
+
+\vspace{0.3cm}
+
+% --- MAIN TITLE ---
+{\LARGE\bfseries\color{titledark}
+Analysis, Simplification and\\[4pt]
+Arduino-Based Verification\\[4pt]
+of XNOR Logic Circuit
+}
+
+\vspace{0.3cm}
+
+{\large\textcolor{accentblue}{GATE IN 2017 -- Digital Logic Problem}}
+
+\vspace{0.4cm}
+\textcolor{accentblue}{\rule{0.9\linewidth}{1.2pt}}
+
+\vspace{0.5cm}
+
+% --- CIRCUIT DIAGRAM ---
+\xnorcircuit{0.72}
+
+\vspace{0.5cm}
+
+% --- SUBMISSION DETAILS BOX ---
+\begin{tcolorbox}[
+  colback=white, colframe=accentblue,
+  boxrule=0.8pt, arc=3pt,
+  left=12pt, right=12pt, top=6pt, bottom=6pt,
+  width=0.72\linewidth
+]
+\centering
+{\bfseries\color{accentblue}\MakeUppercase{Documentation}}\\[6pt]
+\begin{tabular}{@{}r@{\quad}l@{}}
+\textbf{Submitted by} & Shreya Agarwal \\[3pt]
+\textbf{Subject}      & Digital Electronics \& Logic Design \\[3pt]
+\textbf{Date}         & \today
+\end{tabular}
+\end{tcolorbox}
+
+\vfill
+
+
+\end{center}
+\end{titlepage}
+
+%=================================================
+% TABLE OF CONTENTS
+%=================================================
+\tableofcontents
+\newpage
+
+%=================================================
+\section{Abstract}
+
+\begin{tcolorbox}[abstractbox, title={Overview}]
+This report presents a systematic \textbf{analysis, simplification, and hardware
+verification} of a digital logic circuit drawn from the GATE Instrumentation
+Engineering (IN) 2017 examination paper. The circuit comprises two NOT gates,
+two AND gates, and one OR gate. Boolean algebra is applied to reduce the
+network, yielding the result:
+\[
+\boxed{X = AB + \overline{A}\,\overline{B}}
+\]
+This expression represents the \textbf{Exclusive-NOR (XNOR)} function, which
+evaluates to logic HIGH whenever both inputs are equal.
+
+An \textbf{Arduino UNO} platform is subsequently employed to verify this result
+experimentally. An LED connected to pin D13 provides visual confirmation:
+the LED glows for input combinations $(0,0)$ and $(1,1)$, and extinguishes for
+$(0,1)$ and $(1,0)$, in complete agreement with the theoretical derivation.
+\end{tcolorbox}
+
+%=================================================
+\section{Objectives}
+
+The following objectives guided the course of this project:
+
+\begin{enumerate}[label=\textcolor{accentblue}{\textbf{\arabic*.}}, leftmargin=*, itemsep=4pt]
+    \item Analyse the structure of the given GATE IN 2017 logic circuit.
+    \item Derive the corresponding Boolean expression from the schematic.
+    \item Simplify the expression and identify the equivalent logic function.
+    \item Construct a complete truth table to verify the result.
+    \item Implement the logic on an Arduino UNO platform and observe output behaviour.
+    \item Write an equivalent AVR Assembly program and verify consistency.
+\end{enumerate}
+
+%=================================================
+\section{Problem Statement}
+
+Determine the Boolean expression corresponding to the given GATE IN 2017
+logic circuit (Fig.\ 3.16) and identify the relationship between inputs $A$, $B$
+and output $X$. Verify the result using a truth table, an Arduino C++ program,
+and an AVR Assembly implementation.
+
+\begin{figure}[H]
+\centering
+\xnorcircuit{1.0}
+\caption{Given GATE IN 2017 Logic Circuit (Fig.\ 3.16)}
+\label{fig:circuit}
+\end{figure}
+
+\noindent
+The multiple-choice options given in the examination are:
+\begin{enumerate}[label=\alph*), leftmargin=2cm]
+    \item $X = \overline{A}B + \overline{B}A$
+    \item $X = AB + \overline{B}A$
+    \item $X = AB + \overline{B}A$
+    \item $X = \overline{A}B + \overline{B}A$
+\end{enumerate}
+
+%=================================================
+\section{Circuit Analysis and Simplification}
+
+\subsection{Step-by-Step Derivation}
+
+\noindent\textbf{Step 1 --- NOT Gate Outputs}
+
+The two inverters produce the complements of the inputs:
+\[
+\overline{A} \qquad \text{and} \qquad \overline{B}
+\]
+
+\noindent\textbf{Step 2 --- Upper AND Gate Output}
+
+The AND gate receiving both complements gives:
+\[
+X_1 = \overline{A}\,\overline{B}
+\]
+
+\noindent\textbf{Step 3 --- Lower AND Gate Output}
+
+The AND gate receiving the original inputs gives:
+\[
+X_2 = AB
+\]
+
+\noindent\textbf{Step 4 --- Final OR Gate Output}
+
+The OR gate combines $X_1$ and $X_2$:
+\[
+X = X_1 + X_2 = \overline{A}\,\overline{B} + AB
+\]
+
+\begin{tcolorbox}[resultbox, title={Verified Result}]
+\[
+\boxed{X = AB + \overline{A}\,\overline{B}}
+\]
+The circuit implements an \textbf{XNOR} gate. The output is HIGH when both
+inputs are equal ($A = B$), and LOW when they differ ($A \neq B$).
+\end{tcolorbox}
+
+%=================================================
+\section{Truth Table Verification}
+
+\begin{table}[H]
+\centering
+\caption{Complete Truth Table --- XNOR Function}
+\vspace{0.08cm}
+\label{tab:truth}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{
+    C{2cm} C{2cm} C{2cm} C{3.5cm}
+}
+\arrayrulecolor{accentblue}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{A}} &
+\textcolor{white}{\textbf{B}} &
+\textcolor{white}{\textbf{X}} &
+\textcolor{white}{\textbf{Remark}} \\
+\midrule
+0 & 0 & \textcolor{checkgreen}{\textbf{1}} & \textcolor{checkgreen}{$A = B$ \checkmark} \\
+\rowcolor{rowaltbg}
+0 & 1 & 0 & $A \neq B$ \\
+1 & 0 & 0 & $A \neq B$ \\
+\rowcolor{rowaltbg}
+1 & 1 & \textcolor{checkgreen}{\textbf{1}} & \textcolor{checkgreen}{$A = B$ \checkmark} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The truth table confirms that $X = 1$ if and only if $A = B$, which is the defining
+property of the XNOR function.
+
+%=================================================
+\section{Hardware Implementation}
+
+\subsection{Components Required}
+
+\begin{table}[H]
+\centering
+\vspace{0.07cm}
+\caption{Bill of Materials}
+\vspace{0.07cm}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{6cm} C{3cm}}
+\arrayrulecolor{accentblue}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Component}} &
+\textcolor{white}{\textbf{Quantity}} \\
+\midrule
+Arduino UNO Microcontroller Board & 1 \\
+\rowcolor{rowaltbg}
+Light-Emitting Diode (LED)         & 1 \\
+220\,$\Omega$ Current-Limiting Resistor & 1 \\
+\rowcolor{rowaltbg}
+Breadboard                         & 1 \\
+Jumper Wires                       & As required \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Pin Assignment}
+
+\begin{table}[H]
+\centering
+
+\caption{Arduino UNO Pin Assignment}
+\vspace{0.07cm}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{C{2.5cm} C{2.5cm} L{6.5cm}}
+\arrayrulecolor{accentblue}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Arduino Pin}} &
+\textcolor{white}{\textbf{Signal}} &
+\textcolor{white}{\textbf{Function}} \\
+\midrule
+\textcolor{accentblue}{\textbf{D11}} & Input $A$ LED  & LED indicator for input variable $A$ \\
+\rowcolor{rowaltbg}
+\textcolor{accentblue}{\textbf{D12}} & Input $B$ LED  & LED indicator for input variable $B$ \\
+\textcolor{accentblue}{\textbf{D13}} & Output $X$ LED & LED indicator --- HIGH when $A = B$ (XNOR) \\
+\rowcolor{rowaltbg}
+\textcolor{accentblue}{\textbf{5V}}  & VCC            & Power supply to LEDs and resistors \\
+\textcolor{accentblue}{\textbf{GND}} & GND            & Common ground reference \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Circuit Schematic}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape, line width=0.6pt]
+
+%----------------------------------------------------------
+% ARDUINO UNO box  (x: 0..3,  y: 0..9)
+%----------------------------------------------------------
+\draw (0,0) rectangle (3,9);
+\node[font=\bfseries\small] at (1.5,8.5) {Arduino UNO};
+
+% D11  y=7.0
+\node[right, font=\small] at (0.2,7.0) {D11};
+\draw (3,7.0) -- (3.8,7.0);
+
+% D12  y=5.0
+\node[right, font=\small] at (0.2,5.0) {D12};
+\draw (3,5.0) -- (3.8,5.0);
+
+% D13  y=3.0
+\node[right, font=\small] at (0.2,3.0) {D13};
+\draw (3,3.0) -- (3.8,3.0);
+
+% GND  y=1.0
+\node[right, font=\small] at (0.2,1.0) {GND};
+\draw (3,1.0) -- (3.8,1.0);
+
+%----------------------------------------------------------
+% RESISTORS  (3.8 → 6.8)
+%----------------------------------------------------------
+\draw (3.8,7.0) to[R, l=$R_1{=}220\,\Omega$] (6.8,7.0);
+\draw (3.8,5.0) to[R, l=$R_2{=}220\,\Omega$] (6.8,5.0);
+\draw (3.8,3.0) to[R, l=$R_3{=}220\,\Omega$] (6.8,3.0);
+
+%----------------------------------------------------------
+% LEDs  (6.8 → 9.2)
+%----------------------------------------------------------
+\draw (6.8,7.0) to[leDo, color=black] (9.2,7.0);
+\draw (6.8,5.0) to[leDo, color=black] (9.2,5.0);
+\draw (6.8,3.0) to[leDo, color=black] (9.2,3.0);
+
+% LED name labels — placed BELOW each row, clear of symbols
+\node[below, font=\small\itshape] at (8.0,6.85) {LED$_A$ — Input $A$};
+\node[below, font=\small\itshape] at (8.0,4.85) {LED$_B$ — Input $B$};
+\node[below, font=\small\itshape] at (8.0,2.85) {LED$_X$ — Output $X$};
+
+%----------------------------------------------------------
+% GND bus  at y = -0.5
+%----------------------------------------------------------
+% LED cathodes drop straight down to GND bus
+\draw (9.2,7.0) -- (9.2,-0.5);
+\draw (9.2,5.0) -- (9.2,-0.5);   % junction
+\draw (9.2,3.0) -- (9.2,-0.5);   % junction
+
+% Horizontal GND bus
+\draw (3.8,-0.5) -- (9.2,-0.5);
+
+% Arduino GND drops to bus
+\draw (3.8,1.0) -- (3.8,-0.5);
+
+% Ground symbol
+\draw (9.2,-0.5) node[ground]{};
+
+%----------------------------------------------------------
+% JUNCTION DOTS
+%----------------------------------------------------------
+\filldraw (9.2,5.0)  circle (2pt);
+\filldraw (9.2,3.0)  circle (2pt);
+\filldraw (3.8,-0.5) circle (2pt);
+
+\end{circuitikz}
+\caption{Arduino UNO Implementation Schematic}
+\label{fig:schematic}
+\end{figure}
+
+\subsection{Working Principle}
+
+The Arduino firmware iterates through all four possible input combinations of
+$A$ and $B$ in a loop. LEDs on pins D11 and D12 display the current values of
+inputs $A$ and $B$ respectively, so the input state is always visible. The
+XNOR logic is computed in software and the result is driven on pin D13. The
+output LED glows whenever $X = 1$ (i.e.\ $A = B$) and extinguishes whenever
+$X = 0$ (i.e.\ $A \neq B$).
+
+%=================================================
+\newpage
+\section{Arduino Program}
+
+\begin{lstlisting}[style=arduinostyle, caption={XNOR Verification --- Arduino C++ Program}]
+const int A_LED = 11;   // Input A  -- LED indicator
+const int B_LED = 12;   // Input B  -- LED indicator
+const int Y_LED = 13;   // Output X -- LED indicator
+
+void setup()
+{
+    pinMode(A_LED, OUTPUT);
+    pinMode(B_LED, OUTPUT);
+    pinMode(Y_LED, OUTPUT);
+    Serial.begin(9600);
+    Serial.println("A  B  X (XNOR)");
+}
+
+void loop()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        int A = (i >> 1) & 1;  // Extract bit 1
+        int B =  i       & 1;  // Extract bit 0
+
+        // XNOR: output HIGH when A == B
+        int X = (A == B) ? 1 : 0;
+
+        digitalWrite(A_LED, A);   // Show current A on LED
+        digitalWrite(B_LED, B);   // Show current B on LED
+        digitalWrite(Y_LED, X);   // Show XNOR output on LED
+
+        Serial.print(A); Serial.print("  ");
+        Serial.print(B); Serial.print("  ");
+        Serial.println(X);
+
+        delay(1000);            // Hold for 1 second
+    }
+}
+\end{lstlisting}
+
+%=================================================
+\newpage
+\section{AVR Assembly Program}
+
+\begin{lstlisting}[style=asmstyle, caption={XNOR Verification --- AVR Assembly (ATmega328P)}]
+; Pin mapping:
+;   PB3 = Arduino D11 -> A LED
+;   PB4 = Arduino D12 -> B LED
+;   PB5 = Arduino D13 -> X LED (XNOR output)
+
+.include "m328pdef.inc"
+
+.org 0x0000
+    rjmp MAIN
+
+MAIN:
+    ldi  r16, 0b00111000    ; Set PB3, PB4, PB5 as outputs
+    out  DDRB, r16
+
+LOOP:
+    ldi  r17, 0             ; Loop counter i = 0
+
+NEXT:
+    ; --- Extract A (bit1) and B (bit0) from counter ---
+    mov  r18, r17
+    lsr  r18
+    andi r18, 0x01          ; r18 = A
+
+    mov  r19, r17
+    andi r19, 0x01          ; r19 = B
+
+    ; --- Drive A LED on PB3 ---
+    tst  r18
+    breq A_LOW
+    sbi  PORTB, 3           ; A = 1 -> LED ON
+    rjmp A_DONE
+A_LOW:
+    cbi  PORTB, 3           ; A = 0 -> LED OFF
+A_DONE:
+
+    ; --- Drive B LED on PB4 ---
+    tst  r19
+    breq B_LOW
+    sbi  PORTB, 4           ; B = 1 -> LED ON
+    rjmp B_DONE
+B_LOW:
+    cbi  PORTB, 4           ; B = 0 -> LED OFF
+B_DONE:
+
+    ; --- Compute XNOR: X = 1 if A == B ---
+    cp   r18, r19
+    breq SET_HIGH
+    cbi  PORTB, 5           ; A != B -> X LED OFF
+    rjmp DONE
+SET_HIGH:
+    sbi  PORTB, 5           ; A == B -> X LED ON
+
+DONE:
+    rcall DELAY             ; ~1 second delay
+
+    inc   r17
+    cpi   r17, 4
+    brne  NEXT              ; Repeat for all 4 combinations
+
+    rjmp  LOOP              ; Restart cycle indefinitely
+
+DELAY:
+    ldi  r20, 100
+L1: ldi  r21, 255
+L2: ldi  r22, 255
+L3: dec  r22
+    brne L3
+    dec  r21
+    brne L2
+    dec  r20
+    brne L1
+    ret
+\end{lstlisting}
+
+%=================================================
+\section{Results}
+
+\begin{tcolorbox}[abstractbox, title={Experimental Findings}]
+The Arduino UNO successfully iterated through all four input combinations of
+$A$ and $B$. LEDs on D11 and D12 visually confirmed the current input state,
+while the output LED on D13 matched the XNOR truth table exactly:
+\begin{itemize}[itemsep=2pt]
+    \item \textbf{D11 (A LED)} and \textbf{D12 (B LED)} toggled with each combination \quad
+          \textcolor{checkgreen}{\checkmark}
+    \item \textbf{D13 (X LED) ON}  for $(A,B) = (0,0)$ and $(1,1)$ \quad
+          \textcolor{checkgreen}{\checkmark}
+    \item \textbf{D13 (X LED) OFF} for $(A,B) = (0,1)$ and $(1,0)$ \quad
+          \textcolor{checkgreen}{\checkmark}
+\end{itemize}
+Both the Arduino C++ firmware and the AVR Assembly implementation produced
+identical results across all three LEDs, demonstrating consistency at both
+levels of abstraction.
+\end{tcolorbox}
+
+%=================================================
+\section{Optimisation Analysis}
+
+\subsection{Gate Count Comparison}
+
+\begin{table}[H]
+\centering
+
+\caption{Original Circuit vs.\ Direct XNOR Gate Implementation}
+\vspace{0.07cm}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{L{5.5cm} C{3cm} C{3cm}}
+\arrayrulecolor{accentblue}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Metric}} &
+\textcolor{white}{\textbf{Original Circuit}} &
+\textcolor{white}{\textbf{Simplified}} \\
+\midrule
+NOT Gates            & 2 & 0 \\
+\rowcolor{rowaltbg}
+AND Gates            & 2 & 0 \\
+OR Gates             & 1 & 0 \\
+\rowcolor{rowaltbg}
+Total Gates          & 5 & 1 (XNOR IC) \\
+Propagation Delay    & 3 stages & 1 stage \\
+\rowcolor{rowaltbg}
+Implementation       & Discrete gates & 74HCXX / CMOS \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Advantages of Simplification}
+
+\begin{itemize}[leftmargin=*, itemsep=4pt,
+    label=\textcolor{accentblue}{$\blacktriangleright$}]
+    \item \textbf{Reduced gate count} --- five discrete gates replaced by a
+          single XNOR gate (e.g.\ 74HC266), lowering component cost.
+    \item \textbf{Lower propagation delay} --- three cascaded gate delays
+          reduced to one, improving switching speed.
+    \item \textbf{Reduced power consumption} --- fewer active logic elements
+          draw less quiescent current.
+    \item \textbf{Improved reliability} --- fewer components result in fewer
+          potential failure points and higher MTBF.
+    \item \textbf{Smaller PCB footprint} --- significant area savings in
+          integrated circuit layouts and printed circuit board designs.
+\end{itemize}
+
+%=================================================
+\section{Conclusion}
+
+The given GATE IN 2017 logic circuit was systematically analysed using Boolean
+algebra. The step-by-step derivation established that:
+\[
+X = AB + \overline{A}\,\overline{B}
+\]
+This is the \textbf{XNOR} function --- the output is logic HIGH when both inputs
+are equal, and logic LOW when they differ.
+
+The truth table, Arduino C++ firmware, and AVR Assembly program all confirmed
+this result experimentally. This project underscores the practical value of
+Boolean simplification and gate-level optimisation in reducing hardware cost,
+minimising propagation delay, and streamlining design complexity in digital
+electronic systems.
+
+\vfill
+\begin{center}
+\textcolor{accentblue}{\rule{0.6\linewidth}{0.8pt}}\\[4pt]
+\textit{--- End of Report ---}
+\end{center}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
